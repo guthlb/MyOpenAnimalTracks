@@ -161,7 +161,7 @@ def main(args):
         RandomRotation90(p=0.5),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.05),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.03),
         transforms.Lambda(compress_image_transform),
         transforms.ToTensor(),
         transforms.Normalize(mean=config.train.mean, std=config.train.std),
