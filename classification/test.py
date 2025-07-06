@@ -45,7 +45,7 @@ def plot_confusion_matrix(confusion,class_names,model_name):
 	
 
 def main(args):
-	basedir=None
+	basedir='/content/MyOpenAnimalTracks'
 	assert basedir is not None, 'Please set the basedir'
 
 	train_dir = os.path.join(basedir, "classification/data/train")
