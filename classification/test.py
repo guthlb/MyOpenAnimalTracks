@@ -47,10 +47,10 @@ def plot_confusion_matrix(confusion,class_names,model_name):
 def main(args):
 	basedir=None
 	assert basedir is not None, 'Please set the basedir'
-	train_dir = os.path.join(basedir,"OpenAnimalTracks/classification/train")
-	val_dir = os.path.join(basedir,"OpenAnimalTracks/classification/val")
-	test_dir = os.path.join(basedir,"OpenAnimalTracks/classification/test")
 
+	train_dir = os.path.join(basedir, "classification/data/train")
+	val_dir = os.path.join(basedir, "classification/data/val")
+	test_dir = os.path.join(basedir, "classification/data/test")
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
