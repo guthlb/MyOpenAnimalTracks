@@ -13,28 +13,34 @@ from tqdm import tqdm
 
 def plot_confusion_matrix(confusion, class_names, model_name):
     confusion = confusion.astype('float') / confusion.sum(axis=1)[:, np.newaxis]
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12, 10))
     im = ax.imshow(confusion, cmap=plt.cm.Blues, vmin=0, vmax=1)
+
     ax.set_xticks(list(class_names.keys()))
     ax.set_yticks(list(class_names.keys()))
     ax.set_xticklabels(list(class_names.values()))
     ax.set_yticklabels(list(class_names.values()))
     ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
     plt.setp(ax.get_xticklabels(), rotation=-60, ha="right", rotation_mode="anchor")
+
     for edge, spine in ax.spines.items():
         spine.set_visible(False)
-    ax.set_xticks(np.arange(confusion.shape[1]+1)-.5, minor=True)
-    ax.set_yticks(np.arange(confusion.shape[0]+1)-.5, minor=True)
+
+    ax.set_xticks(np.arange(confusion.shape[1] + 1) - .5, minor=True)
+    ax.set_yticks(np.arange(confusion.shape[0] + 1) - .5, minor=True)
     ax.grid(which="minor", color="gray", linestyle='-', linewidth=2)
     fig.colorbar(im)
+
     thresh = confusion.max() / 2.
     for i, j in itertools.product(range(confusion.shape[0]), range(confusion.shape[1])):
         if confusion[i, j] > 0:
-            plt.text(j, i, f'{confusion[i, j]:.02f}', fontsize='x-small',
-                     horizontalalignment="center", verticalalignment="center",
-                     color="white" if confusion[i, j] > thresh else "black")
-    plt.subplots_adjust(left=0.1, right=1.0, bottom=0.025, top=0.825)
+            ax.text(j, i, f'{confusion[i, j]:.02f}', fontsize='x-small',
+                    horizontalalignment="center", verticalalignment="center",
+                    color="white" if confusion[i, j] > thresh else "black")
+
+    plt.tight_layout()
     plt.savefig(f'confmat_{model_name}.pdf', dpi=300)
+    return fig
 
 def main(args):
     basedir = '/content/MyOpenAnimalTracks'
@@ -62,7 +68,6 @@ def main(args):
 
     class_names = {i: test_dataset.classes[i] for i in range(len(test_dataset.classes))}
 
-    # ✅ consistent animal class name mapping
     long2short = {
         'mink': 'Mink', 'black_bear': 'Bear', 'beaver': 'Beaver', 'bob_cat': 'Cat',
         'coyote': 'Coyote', 'muledeer': 'Deer', 'goose': 'Goose', 'elephant': 'Elephant',
@@ -107,8 +112,8 @@ def main(args):
     class_names_ordered = {i: class_names_ordered[i] for i in range(len(class_names_ordered))}
     print(class_names_ordered)
 
-    plot_confusion_matrix(cm2, class_names_ordered, args.config.split('/')[-1].split('.')[0])
-    plt.show()
+    fig = plot_confusion_matrix(cm2, class_names_ordered, args.config.split('/')[-1].split('.')[0])
+    plt.show(fig)
 
     class_acc = [(cm2[i][i] / cm2[i].sum()) * 100 for i in range(len(class_names))]
     avg_class_acc = sum(class_acc) / len(class_names)
