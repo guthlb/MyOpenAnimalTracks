@@ -1,3 +1,6 @@
+data:
+  path: /content/MyOpenAnimalTracks/OpenAnimalTracks/cropped_imgs
+
 model:
   name: efficientnet_b1
   pretrained: True
