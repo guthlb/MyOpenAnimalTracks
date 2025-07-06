@@ -1,5 +1,7 @@
 data:
   path: /content/MyOpenAnimalTracks/OpenAnimalTracks/cropped_imgs
+  train_dir: /content/MyOpenAnimalTracks/classification/data/cropped_imgs/train
+  val_dir: /content/MyOpenAnimalTracks/classification/data/cropped_imgs/val
 
 model:
   name: efficientnet_b1
