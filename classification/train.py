@@ -15,12 +15,11 @@ import random
 from PIL import Image
 import utils 
 from tqdm import tqdm
+
 def compress_image_transform(img):
     return compress_image(img, quality_lower=50, quality_upper=100)
 
-
 def compute_adjustment(labels, tro=1.0):
-    """compute the base probabilities"""
     N = len(labels)
     labels_unique = list(set(labels))
     print(labels_unique)
@@ -81,20 +80,16 @@ def log_confusion_matrix(writer, epoch, class_names, targets, predictions, phase
     writer.add_figure(f'{phase}/Confusion Matrix', fig, epoch)
 
 def training_step(model, criterion, optimizer, input, target, writer, global_step, class_names, adj):
-    # move the input and target data to the GPU
     input = input.cuda()
     target = target.cuda()
 
-    # forward pass
     output = model(input)
     loss = criterion(output + adj.to(output.device), target)
 
-    # backward pass and optimization
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
 
-    # calculate accuracy and log class-wise loss and accuracy to TensorBoard
     _, predicted = torch.max(output.data, 1)
     correct = (predicted == target).squeeze()
     for i in range(len(class_names)):
@@ -118,61 +113,47 @@ def evaluate(model, criterion, val_loader, writer, epoch, class_names):
     class_total = torch.zeros(len(class_names)).cuda()
     with torch.no_grad():
         for input, target in val_loader:
-            # move the input and target data to the GPU
             input = input.cuda()
             target = target.cuda()
-            # forward pass
             output = model(input)
 
-            # calculate accuracy and predictions
             _, predicted = torch.max(output.data, 1)
             total += target.size(0)
             correct += (predicted == target).sum().item()
-            all_targets.extend(target.cuda().numpy())
-            all_predictions.extend(predicted.cuda().numpy())
+            all_targets.extend(target.cuda().cpu().numpy())
+            all_predictions.extend(predicted.cuda().cpu().numpy())
 
-            # calculate per-class accuracy and loss
             for i in range(len(class_names)):
                 class_mask = target == i
                 class_correct[i] += (predicted[class_mask] == i).sum().item()
                 class_total[i] += class_mask.sum().item()
-                # class_loss = criterion(output[class_mask], target[class_mask])
-                # class_losses[i] += class_loss.item()
 
-    # calculate accuracy and log confusion matrix to TensorBoard
     accuracy = correct / total
     log_confusion_matrix(writer, epoch, class_names, all_targets, all_predictions, 'val')
     writer.add_scalar('val/accuracy/total', accuracy, epoch)
 
-    # log per-class accuracy and loss to TensorBoard
     for i in range(len(class_names)):
         if class_total[i] > 0:
             writer.add_scalar('val/accuracy/{}'.format(class_names[i]), class_correct[i] / class_total[i], epoch)
-            # writer.add_scalar('val/loss/{}'.format(class_names[i]), class_losses[i] / class_total[i], epoch)
 
     return
 
 def main(args):
-    # Please set the basedir 
-    basedir = "C:/Users/Ayati/Downloads/OpenAnimalTracks/OpenAnimalTracks"
-    assert basedir is not None, 'Please set the basedir'
-    train_dir = os.path.join(basedir, "cropped_imgs/train")
-    val_dir = os.path.join(basedir, "cropped_imgs/val")
-    test_dir = os.path.join(basedir, "cropped_imgs/test")
-
     with open(args.config) as f:
         config = OmegaConf.load(f)
+
+    train_dir = config.data.train_dir
+    val_dir = config.data.val_dir
+    test_dir = os.path.join(config.data.path, "test")
 
     from datetime import datetime
     now = datetime.now()
     formatted_date = now.strftime('%Y_%m_%d_%H_%M_%S')
 
-    # set up TensorBoard logging
     log_dir = os.path.join('log', f'{config.model.name}{["", "_linprob"][args.linprob]}/{formatted_date}')
-    
     os.makedirs(log_dir, exist_ok=True)
     writer = SummaryWriter(log_dir)
-    
+
     batch_size = config.train.batch_size
     size = config.train.img_size
     train_transform = transforms.Compose([
@@ -194,26 +175,21 @@ def main(args):
 
     train_dataset = datasets.ImageFolder(train_dir, transform=train_transform)
     val_dataset = datasets.ImageFolder(val_dir, transform=val_transform)
-    test_dataset = datasets.ImageFolder(test_dir, transform=val_transform)
+    test_dataset = datasets.ImageFolder(test_dir, transform=val_transform) if os.path.exists(test_dir) else None
 
     adjustment = compute_adjustment(train_dataset.targets)
     if not args.use_adj:
         adjustment = torch.zeros_like(adjustment)
 
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, num_workers=4, shuffle=True, drop_last=True, pin_memory=True
-    )
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, drop_last=False, pin_memory=True
-    )
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, drop_last=False, pin_memory=True
-    )
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, num_workers=4, shuffle=True, drop_last=True, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, drop_last=False, pin_memory=True)
+
+    if test_dataset:
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, drop_last=False, pin_memory=True)
 
     class_names = {i: train_dataset.classes[i] for i in range(len(train_dataset.classes))}
     print(f'Class name: {class_names}')
 
-    # define the model architecture
     model, head = utils.get_models(config.model.name, len(class_names), return_head=True)
     if args.weight is not None:
         pretrained_weight = torch.load(args.weight, map_location='cpu')
@@ -223,14 +199,10 @@ def main(args):
     model.eval()
 
     criterion = nn.CrossEntropyLoss()
-    if args.linprob:
-        params = head.parameters()
-    else:
-        params = model.parameters()
+    params = head.parameters() if args.linprob else model.parameters()
     optimizer = optim.SGD(params, lr=config.train.lr, momentum=config.train.momentum, weight_decay=config.train.weight_decay)
 
     global_step = 0
-    # train the model
     for epoch in range(config.train.num_epochs):
         if args.linprob:
             head.train()
@@ -240,7 +212,7 @@ def main(args):
             loss = training_step(model, criterion, optimizer, input, target, writer, global_step, class_names, adjustment)
             global_step += 1
         model.eval()
-        accuracy = evaluate(model, criterion, val_loader, writer, epoch, class_names)
+        evaluate(model, criterion, val_loader, writer, epoch, class_names)
 
     weight_save_dir = f'checkpoints/{config.model.name}{["", "_linprob"][args.linprob]}/{formatted_date}'
     os.makedirs(weight_save_dir, exist_ok=True)
@@ -248,7 +220,6 @@ def main(args):
     torch.save(model.state_dict(), model_path)
 
 if __name__ == '__main__':
-    # define command-line arguments
     parser = argparse.ArgumentParser(description='PyTorch image classification')
     parser.add_argument('-c', '--config', required=True, type=str, metavar='FILE', help='path to configuration file (default: config.yaml)')
     parser.add_argument('--use_adj', action='store_true')
