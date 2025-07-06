@@ -144,7 +144,7 @@ def main(args):
 
     train_dir = config.data.train_dir
     val_dir = config.data.val_dir
-    test_dir = os.path.join(config.data.path, "test")
+    test_dir = config.data.test_dir  # ✅ THIS is the only modified line
 
     from datetime import datetime
     now = datetime.now()
