@@ -46,8 +46,8 @@ def main(args):
     basedir = '/content/MyOpenAnimalTracks'
     assert basedir is not None, 'Please set the basedir'
 
-    # ✅ corrected paths
-    test_dir = os.path.join(basedir, "classification/data/test")
+   
+    test_dir = os.path.join(basedir, "classification/data/cropped_imgs/test")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
