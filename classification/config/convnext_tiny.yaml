@@ -1,6 +1,10 @@
 model:
   name: convnext_tiny
   pretrained: true
+data:
+  train_dir: classification/data/cropped_imgs/train
+  val_dir: classification/data/cropped_imgs/val
+  test_dir: classification/data/cropped_imgs/test
 
 train:
   batch_size: 64
