@@ -113,7 +113,7 @@ def main(args):
     print(class_names_ordered)
 
     fig = plot_confusion_matrix(cm2, class_names_ordered, args.config.split('/')[-1].split('.')[0])
-    plt.show(fig)
+    plt.show()
 
     class_acc = [(cm2[i][i] / cm2[i].sum()) * 100 for i in range(len(class_names))]
     avg_class_acc = sum(class_acc) / len(class_names)
