@@ -84,7 +84,7 @@ def main(args):
         transforms.Resize((config.train.img_size, config.train.img_size)),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
-        transforms.ColorJitter(0.4, 0.4, 0.4, 0.1),
+        transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
         RandomRotation90(0.5),
         transforms.Lambda(lambda img: compress_image(img, 40, 100)),
         transforms.ToTensor(),
