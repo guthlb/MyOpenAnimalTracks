@@ -54,9 +54,11 @@ def get_models(name,n_classes,return_head=False):
         model.classifier = efficientnet_b1(num_classes=n_classes).classifier
         head=model.classifier
     elif name == 'convnext_tiny':
+        
         model = convnext_tiny(weights=ConvNeXt_Tiny_Weights.DEFAULT)
         in_features = model.classifier[2].in_features
-        model.classifier[2] = nn.Linear(in_features, n_classes)
+        model.classifier = nn.Identity()
+        model.embedding = nn.Linear(in_features, embedding_dim)
         head=model.classifier
 
     else:
