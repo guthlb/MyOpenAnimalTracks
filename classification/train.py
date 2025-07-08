@@ -39,6 +39,7 @@ def main(config_path):
             loss = criterion(anchor_embed, positive_embed, negative_embed)
             loss.backward()
             optimizer.step()
+            torch.cuda.empty_cache()
             total_loss += loss.item()
         print(f"Epoch {epoch+1} - Loss: {total_loss / len(train_loader):.4f}")
 
