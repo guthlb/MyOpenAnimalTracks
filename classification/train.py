@@ -21,8 +21,8 @@ def main(config_path):
     train_data_raw = datasets.ImageFolder(config.data.train_dir, transform=transform)
     train_dataset = TripletDataset(train_data_raw)
     train_loader = DataLoader(train_dataset, batch_size=config.train.batch_size, shuffle=True, num_workers=2)
-
-    model = get_models(config.model.name, len(class_names)).cuda()
+    n_classes = len(train_data_raw.classes)
+    model = get_models(config.model.name, n_classes)).cuda()
     criterion = TripletMarginLoss(margin=1.0)
     optimizer = Adam(model.parameters(), lr=config.train.lr)
 
