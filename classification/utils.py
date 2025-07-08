@@ -12,7 +12,7 @@ from torch import nn
 from torchvision.models import convnext_tiny, ConvNeXt_Tiny_Weights
 
 
-def get_models(name,n_classes,return_head=False):
+def get_models(name,n_classes,embedding_dim=128,return_head=False):
     if name=='resnet18':
         weights = ResNet18_Weights.DEFAULT
         model = resnet18(weights=weights)
@@ -54,12 +54,15 @@ def get_models(name,n_classes,return_head=False):
         model.classifier = efficientnet_b1(num_classes=n_classes).classifier
         head=model.classifier
     elif name == 'convnext_tiny':
-        
         model = convnext_tiny(weights=ConvNeXt_Tiny_Weights.DEFAULT)
         in_features = model.classifier[2].in_features
-        model.classifier = nn.Identity()
-        model.embedding = nn.Linear(in_features, embedding_dim)
-        head=model.classifier
+        model.classifier[2] = nn.Sequential(
+            nn.Linear(in_features, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, embedding_dim)  # Final embedding layer
+        )
+        model.embedding = nn.Identity()  # To extract embeddings directly
+        head = model.classifier
 
     else:
         raise NotImplementedError
