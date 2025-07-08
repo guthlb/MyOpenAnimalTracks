@@ -3,8 +3,8 @@ import torch.nn as nn
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from triplets_dataset import TripletDataset
-from utils_triplet import get_models
-from omegaconf import OmegaConf
+from utils import get_models
+from config import OmegaConf
 from torch.optim import Adam
 from torch.nn import TripletMarginLoss
 from tqdm import tqdm
