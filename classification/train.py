@@ -43,6 +43,8 @@ def main(config_path):
             total_loss += loss.item()
         print(f"Epoch {epoch+1} - Loss: {total_loss / len(train_loader):.4f}")
 
+    import os
+    os.makedirs("checkpoints", exist_ok=True)
     torch.save(model.state_dict(), "checkpoints/convnext_triplet.pth")
 
 if __name__ == '__main__':
